@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<base target="_top">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<?!= require('BOOTSTRAP'); ?>
+    <?!= require('STYLE'); ?>
+    <title><?!= title; ?></title>
+</head>
+<body data-ng-app="quotemaker">
+	<div class="container-fluid" data-ng-controller="ApplicationController">
+		<header id="header" class="row" data-ng-style="{ 'background-color': data.color }"> <!-- background-color --> 
+			<div class="col-md-offset-2 col-md-8">
+				<div class="panel panel-default">
+					<div class="panel-body">
+						<div  class="container-fluid">
+							<div class="row">
+								<div class="col-md-6">
+									<h1>
+										<span data-ng-bind="data.name" ng-show="data.name"></span>
+										<span ng-hide="data.name">Cotizador</span>
+										<small data-ng-bind="data.description" ng-show="data.description"></small>
+									</h1>
+								</div>
+								<div class="col-md-6"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</header>
+		<div id="content" class="row">
+			<div class="col-md-offset-2 col-md-8"> 
+				<div id="mainsheet" class="panel panel-default">
+					<div id="main-body" class="panel-body">
+						<div id="elements" class="panel panel-default col col-md-4">
+							<ul class="list-group" data-ng-repeat="element in data.data">
+								<li class="list-group-item heading">
+									{{ element.name }}
+								</li>
+								<li class="list-group-item" data-ng-repeat="option in element.values" data-ng-click="addToQuote( option )" data-ng-class="{'list-item-selected': option.selected }">
+									<div class="row">
+										<div class="col-sm-8 col-xs-8 list-item-name">
+											<i class="fa" aria-hidden="true" data-ng-class="{
+												'fa-check-square': option.selected, 'fa-plus': !option.selected
+											}"></i>
+											{{ option.concept }}
+										</div>
+										<div class="col-sm-4 col-xs-4 list-item-price" data-ng-bind="option.price | currency"></div>
+									</div>
+									<div class="row">
+										<div class="col-sm-12 list-item-description">
+											{{ option.description }} 
+										</div>
+										<div class="col-sm-12 list-item-description">
+											<span data-ng-show="option.step"> — cantidad mínima: {{ option.step }} </span>
+										</div>
+									</div>
+								</li>
+							</ul>
+						</div>
+						<div id="quote-elements" class="panel panel-default col col-md-8">
+							<div id="quote-top-total" class="panel-heading">
+								<div class="container-fluid">
+									<div class="row">
+										<div class="col-md-4">
+											<p class="text-left"><strong>Total</strong></p>
+										</div>
+										<div class="col-md-8">
+											<p class="text-right"><strong data-ng-bind="total | currency"></strong></p>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="panel-body">
+								<ul class="list-group quote-list-group">
+									<li class="list-group-item quote-list-item" data-ng-show="quote.length < 1">
+										<div class="row">
+											<div class="col-sm-12">
+												<p class="text-muted text-center quote-item-description">Ningún elemento seleccionado</p>
+											</div>
+										</div>
+									</li>
+									<li class="list-group-item quote-list-item" data-ng-show="quote.length > 0">
+										<div class="row">
+											<div class="col-sm-7 col-xs-6">
+												<div class="quote-list-item-col text-muted text-underline text-center">
+													concepto
+												</div>
+											</div>
+											<div class="col-sm-3 col-xs-6">
+												<div class="quote-list-item-col text-muted text-underline text-center">
+													cantidad
+												</div>
+											</div>
+											<div class="col-sm-2 col-xs-12">
+												<div class="quote-list-item-col text-muted text-underline text-center">
+													subtotal
+												</div>
+											</div>
+										</div>
+									</li>
+									<li class="list-group-item quote-list-item" data-ng-repeat="qel in quote track by $index">
+										<div class="row">
+											<div class="col-sm-12">
+												<div class="quote-list-item-remove" data-ng-click="removeFromQuote( $index, qel )">eliminar</div>
+											</div>
+										</div>
+										<div class="row">
+											<div class="col-sm-7 col-xs-6">
+												<p class="lead quote-list-item-name"> <strong data-ng-bind="qel.concept"></strong> </p>
+												<p class="quote-item-description text-muted" data-ng-bind="qel.description"></p>
+											</div>
+											<div class="col-sm-3 col-xs-6">
+												<div class="input-group" data-ng-show="qel.qty">
+													<span class="input-group-btn" data-ng-click="decreaseStep( qel )">
+														<button class="btn btn-default btn-sm" type="button">
+															<i class="fa fa-minus" aria-hidden="true"></i>
+														</button>
+													</span>
+													<p class="text-center quote-list-item-qty" data-ng-bind="qel.qty"></p>
+													<span class="input-group-btn" data-ng-click="increaseStep( qel )">
+														<button class="btn btn-default btn-sm" type="button">
+															<i class="fa fa-plus" aria-hidden="true"></i>
+														</button>
+													</span>
+												</div>
+											</div>
+											<div class="col-sm-2 col-xs-12">
+												<p class="quote-item-price text-right" data-ng-bind="qel.subtotal | currency"></p>
+											</div>
+										</div>
+									</li>
+								</ul>
+							</div>
+							<div class="panel-footer">
+								<ul class="list-group">
+									<li class="list-group-item" data-ng-if="data.tax">
+										<div class="row">
+											<div class="col-sm-7 col-xs-6">
+												<p class="quote-list-item-name"> ITBIS </p>
+											</div>
+											<div class="col-sm-3 col-xs-6">
+												<p class="quote-list-item-name" data-ng-bind="data.tax"></p>
+											</div>
+											<div class="col-sm-2 col-xs-12">
+												<p class="quote-list-item-name" data-ng-bind="total * data.tax | currency"></p>
+											</div>
+										</div>
+									</li>
+									<li class="list-group-item" data-ng-if="data.comission">
+										<div class="row">
+											<div class="col-sm-7 col-xs-6">
+												<p class="quote-list-item-name"> Comisión </p>
+											</div>
+											<div class="col-sm-3 col-xs-6">
+												<p class="quote-list-item-name" data-ng-bind="data.comission"></p>
+											</div>
+											<div class="col-sm-2 col-xs-12">
+											</div>
+										</div>
+									</li>
+									<li class="list-group-item" data-ng-if="data.discount">
+										<div class="row">
+											<div class="col-sm-7 col-xs-6">
+												<p class="quote-list-item-name"> Descuento </p>
+											</div>
+											<div class="col-sm-3 col-xs-6"></div>
+											<div class="col-sm-2 col-xs-12">
+												<p class="quote-list-item-name" data-ng-bind="data.discount"></p>
+											</div>
+										</div>
+									</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!DOCTYPE html>
+<html>
+<head>
+	<base target="_top">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<?!= require('BOOTSTRAP'); ?>
+    <?!= require('STYLE'); ?>
+    <title><?!= title; ?></title>
+</head>
+<body data-ng-app="quotemaker">
+	<div class="container-fluid" data-ng-controller="ApplicationController">
+		<header id="header" class="row" data-ng-style="{ 'background-color': data.color }"> <!-- background-color --> 
+			<div class="col-md-offset-2 col-md-8">
+				<div class="panel panel-default">
+					<div class="panel-body">
+						<div  class="container-fluid">
+							<div class="row">
+								<div class="col-md-6">
+									<h1>
+										<span data-ng-bind="data.name" ng-show="data.name"></span>
+										<span ng-hide="data.name">Cotizador</span>
+										<small data-ng-bind="data.description" ng-show="data.description"></small>
+									</h1>
+								</div>
+								<div class="col-md-6"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</header>
+		<div id="content" class="row">
+			<div class="col-md-offset-2 col-md-8"> 
+				<div id="mainsheet" class="panel panel-default">
+					<div id="main-body" class="panel-body">
+						<div id="elements" class="panel panel-default col col-md-4">
+							<ul class="list-group" data-ng-repeat="element in data.data">
+								<li class="list-group-item heading">
+									{{ element.name }}
+								</li>
+								<li class="list-group-item" data-ng-repeat="option in element.values" data-ng-click="addToQuote( option )" data-ng-class="{'list-item-selected': option.selected }">
+									<div class="row">
+										<div class="col-sm-8 col-xs-8 list-item-name">
+											<i class="fa" aria-hidden="true" data-ng-class="{
+												'fa-check-square': option.selected, 'fa-plus': !option.selected
+											}"></i>
+											{{ option.concept }}
+										</div>
+										<div class="col-sm-4 col-xs-4 list-item-price" data-ng-bind="option.price | currency"></div>
+									</div>
+									<div class="row">
+										<div class="col-sm-12 list-item-description">
+											{{ option.description }} 
+										</div>
+										<div class="col-sm-12 list-item-description">
+											— cantidad mínima: {{ option.step }}
+										</div>
+									</div>
+								</li>
+							</ul>
+						</div>
+						<div id="quote-elements" class="panel panel-default col col-md-8">
+							<div id="quote-top-total" class="panel-heading">
+								<div class="container-fluid">
+									<div class="row">
+										<div class="col-md-4">
+											<p class="text-left"><strong>Total</strong></p>
+										</div>
+										<div class="col-md-8">
+											<p class="text-right"><strong data-ng-bind="total | currency"></strong></p>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="panel-body">
+								<ul class="list-group quote-list-group">
+									<li class="list-group-item quote-list-item" data-ng-show="quote.length < 1">
+										<div class="row">
+											<div class="col-sm-12">
+												<p class="text-muted text-center quote-item-description">Ningún elemento seleccionado</p>
+											</div>
+										</div>
+									</li>
+									<li class="list-group-item quote-list-item" data-ng-show="quote.length > 0">
+										<div class="row">
+											<div class="col-sm-7 col-xs-6">
+												<div class="quote-list-item-col text-muted text-underline text-center">
+													concepto
+												</div>
+											</div>
+											<div class="col-sm-3 col-xs-6">
+												<div class="quote-list-item-col text-muted text-underline text-center">
+													cantidad
+												</div>
+											</div>
+											<div class="col-sm-2 col-xs-12">
+												<div class="quote-list-item-col text-muted text-underline text-center">
+													subtotal
+												</div>
+											</div>
+										</div>
+									</li>
+									<li class="list-group-item quote-list-item" data-ng-repeat="qel in quote track by $index">
+										<div class="row">
+											<div class="col-sm-12">
+												<div class="quote-list-item-remove" data-ng-click="removeFromQuote( $index, qel )">eliminar</div>
+											</div>
+										</div>
+										<div class="row">
+											<div class="col-sm-7 col-xs-6">
+												<p class="lead quote-list-item-name"> <strong data-ng-bind="qel.concept"></strong> </p>
+												<p class="quote-item-description text-muted" data-ng-bind="qel.description"></p>
+											</div>
+											<div class="col-sm-3 col-xs-6">
+												<div class="input-group">
+													<span class="input-group-btn" data-ng-click="decreaseStep( qel )">
+														<button class="btn btn-default btn-sm" type="button">
+															<i class="fa fa-minus" aria-hidden="true"></i>
+														</button>
+													</span>
+													<p class="text-center quote-list-item-qty" data-ng-bind="qel.qty"></p>
+													<span class="input-group-btn" data-ng-click="increaseStep( qel )">
+														<button class="btn btn-default btn-sm" type="button">
+															<i class="fa fa-plus" aria-hidden="true"></i>
+														</button>
+													</span>
+												</div>
+											</div>
+											<div class="col-sm-2 col-xs-12">
+												<p class="quote-item-price text-right" data-ng-bind="qel.subtotal | currency"></p>
+											</div>
+										</div>
+									</li>
+								</ul>
+							</div>
+							<div class="panel-footer">
+								<ul class="list-group">
+									<li class="list-group-item" data-ng-if="data.tax">
+										<div class="row">
+											<div class="col-sm-7 col-xs-6">
+												<p class="quote-list-item-name"> ITBIS </p>
+											</div>
+											<div class="col-sm-3 col-xs-6">
+												<p class="quote-list-item-name" data-ng-bind="data.tax"></p>
+											</div>
+											<div class="col-sm-2 col-xs-12">
+												<p class="quote-list-item-name" data-ng-bind="total * data.tax | currency"></p>
+											</div>
+										</div>
+									</li>
+									<li class="list-group-item" data-ng-if="data.comission">
+										<div class="row">
+											<div class="col-sm-7 col-xs-6">
+												<p class="quote-list-item-name"> Comisión </p>
+											</div>
+											<div class="col-sm-3 col-xs-6"></div>
+											<div class="col-sm-2 col-xs-12">
+												<p class="quote-list-item-name" data-ng-bind="data.comission"></p>
+											</div>
+										</div>
+									</li>
+									<li class="list-group-item" data-ng-if="data.discount">
+										<div class="row">
+											<div class="col-sm-7 col-xs-6">
+												<p class="quote-list-item-name"> Descuento </p>
+											</div>
+											<div class="col-sm-3 col-xs-6"></div>
+											<div class="col-sm-2 col-xs-12">
+												<p class="quote-list-item-name" data-ng-bind="data.discount"></p>
+											</div>
+										</div>
+									</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<footer class="row">
+			<div class="col-sm-12">
+				<p class="text-center text-muted">
+					Hecho con <i class="fa fa-heart"></i> por <a href="http://richardblondet.com">Richard</a>.
+				</p>
+			</div>
+		</footer>
+	</div>
+    <?!= require('JS'); ?>
+</body>
+</html>
+
+
+
+	</div>
+    <?!= require('JS'); ?>
+</body>
+</html>
+
+

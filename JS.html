@@ -1,0 +1,85 @@
+<script src="//code.angularjs.org/1.3.2/angular.js"></script>
+<script type="text/javascript">
+;(function() {
+ var app = angular.module('quotemaker', []);
+ 
+app.service('GoogleServerService', GoogleServerServiceHandler);
+app.controller('ApplicationController', ApplicationControllerHandler);
+
+GoogleServerServiceHandler.$inject = ['$rootScope'];
+function GoogleServerServiceHandler( $rootScope ) {
+  var response = {};
+
+  function getDataFromServer( data ) {
+     response = data
+     $rootScope.$broadcast('transport', response );
+  }
+  google.script.run.withSuccessHandler( getDataFromServer ).getData();
+  return response;
+}
+
+ApplicationControllerHandler.$inject = ['$scope','$rootScope', 'GoogleServerService'];
+function ApplicationControllerHandler( $scope, $rootScope, GoogleServerService ) {
+  $scope.data = {};
+  $scope.total = 0;
+  $scope.quote = [];
+  $rootScope.$on('transport', function(event, data) {
+     $scope.data = data;
+     $scope.$digest(); // <- required? yes
+  });
+  
+  $scope.updateTotal = function() {
+     var total = 0;
+     var price = 0;
+     angular.forEach($scope.quote, function(value, key) {
+        var val_qty = Number(value.qty);
+        var val_prc = Number(value.price);
+        value.subtotal = ( val_qty * val_prc );
+        
+        var subTo = Number(value.subtotal);
+        total = total + subTo;
+        
+     });
+     $scope.total = calculateExtras( total );
+  };
+  function calculateExtras( t ) {
+     var total = Number(t);
+     if($scope.data.tax != false) {
+        total =  total + ( total * $scope.data.tax );
+     }
+     if($scope.data.comission != false) {
+        total = total + ( total * $scope.data.comission );
+     }
+     if($scope.data.discount != false) {
+        total = total + ( total * $scope.data.discount );
+     }
+     return total;
+  }
+  $scope.addToQuote = function( option ) {
+     if( option.selected ) return;
+     option.selected = true;
+     option.qty = option.step;
+     option.subtotal = Number(option.price);
+     $scope.quote.push( option );
+     $scope.updateTotal();
+  };
+  $scope.removeFromQuote = function( $index, $option ) {
+     $option.selected = false;
+     var remove = $scope.quote.splice( $index, 1 );
+     $scope.updateTotal();
+  };
+  $scope.increaseStep = function( option ) {
+     option.qty = Number(option.qty) + Number(option.step);
+     $scope.updateTotal();
+  };
+  $scope.decreaseStep = function( option ) {
+     option.qty = Number(option.qty) - Number(option.step );
+     if( option.qty < option.step ) option.qty = option.step;
+     $scope.updateTotal();
+  };
+}
+
+}());
+</script>
+
+
