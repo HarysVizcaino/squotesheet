@@ -2,7 +2,7 @@
 
 Create quotes from data and sheets from a google spreadsheet.
 
-## Authors
+## Author
 
 * **Richard Blondet** - [richardblondet.com](http://richardblondet.com/)
 
